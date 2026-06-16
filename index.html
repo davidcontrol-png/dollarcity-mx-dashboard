@@ -658,36 +658,24 @@ tr:hover td { background: var(--green-pale); }
   </div>
 
 
-  <!-- GEO + URLS -->
+  <!-- GEO + LOOKER -->
   <div id="geo" class="section">
-    <div class="section-title">Geografía de Clics · De dónde vienen</div>
-    <div class="two-col">
-      <div class="table-card">
-        <div class="table-header">
-          <div class="table-title">Top ciudades por clics</div>
-          <span id="geo-total" style="font-size:11px;color:var(--gray-400)"></span>
-        </div>
-        <table>
-          <thead>
-            <tr><th>#</th><th>Ciudad</th><th>Estado</th><th>Clics</th><th>Impr.</th><th>CTR</th></tr>
-          </thead>
-          <tbody id="geo-body">
-            <tr><td colspan="6" class="no-data">Cargando…</td></tr>
-          </tbody>
-        </table>
+    <div class="section-title">Geografía de Clics · Análisis en Looker Studio</div>
+    <div style="background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--gray-200);overflow:hidden;">
+      <div style="padding:18px 22px 14px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:13px;font-weight:600;">Reporte geográfico · Dollarcity MX · Google Ads</div>
+        <a href="https://datastudio.google.com/reporting/7ee879b9-22d7-487a-90e8-477811e3f3c4" target="_blank" style="font-size:11px;color:var(--green);font-weight:600;text-decoration:none;">Abrir en Looker Studio ↗</a>
       </div>
-      <div class="table-card">
-        <div class="table-header">
-          <div class="table-title">URL de tienda con más clics</div>
-        </div>
-        <table>
-          <thead>
-            <tr><th>#</th><th>Tienda</th><th>Clics</th><th>CTR</th><th>CPC</th></tr>
-          </thead>
-          <tbody id="url-body">
-            <tr><td colspan="5" class="no-data">Cargando…</td></tr>
-          </tbody>
-        </table>
+      <div style="position:relative;width:100%;overflow:hidden;border-radius:0 0 var(--radius) var(--radius);">
+        <iframe 
+          width="100%" 
+          height="900" 
+          src="https://datastudio.google.com/embed/reporting/7ee879b9-22d7-487a-90e8-477811e3f3c4/page/vAU1F" 
+          frameborder="0" 
+          style="border:0;display:block;" 
+          allowfullscreen 
+          sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox">
+        </iframe>
       </div>
     </div>
   </div>
