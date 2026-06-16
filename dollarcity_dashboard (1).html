@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dollarcity GDL — Campaign Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --green:       #2E7D32;
+  --green-dark:  #1B5E20;
+  --green-light: #43A047;
+  --green-pale:  #E8F5E9;
+  --yellow:      #FFD600;
+  --yellow-dark: #F9A825;
+  --white:       #FFFFFF;
+  --gray-50:     #F8F9FA;
+  --gray-100:    #F1F3F4;
+  --gray-200:    #E8EAED;
+  --gray-400:    #9AA0A6;
+  --gray-600:    #5F6368;
+  --gray-900:    #1A1A1A;
+  --radius:      12px;
+  --shadow:      0 1px 4px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg:   0 8px 32px rgba(0,0,0,.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--gray-50);
+  color: var(--gray-900);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  background: var(--green-dark);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo-badge {
+  background: var(--yellow);
+  color: var(--green-dark);
+  font-weight: 900;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  letter-spacing: .5px;
+}
+.topbar-title {
+  font-size: 14px;
+  font-weight: 500;
+  opacity: .85;
+  letter-spacing: .3px;
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.last-update {
+  font-size: 12px;
+  opacity: .7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pulse {
+  width: 7px; height: 7px;
+  background: var(--yellow);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100%{ opacity:1; transform:scale(1); }
+  50%{ opacity:.4; transform:scale(1.4); }
+}
+.refresh-btn {
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: var(--white);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .2s;
+}
+.refresh-btn:hover { background: rgba(255,255,255,.25); }
+
+/* ── NAV ── */
+.subnav {
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  gap: 0;
+  padding: 0 32px;
+  position: sticky;
+  top: 56px;
+  z-index: 999;
+}
+.subnav a {
+  text-decoration: none;
+  color: var(--gray-600);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 14px 18px;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.subnav a:hover { color: var(--green); }
+.subnav a.active { color: var(--green); border-bottom-color: var(--green); }
+
+/* ── LAYOUT ── */
+.main { max-width: 1280px; margin: 0 auto; padding: 28px 32px 60px; }
+.section { margin-bottom: 36px; }
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gray-200);
+}
+
+/* ── KPI CARDS ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+.kpi-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-200);
+  position: relative;
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--green);
+}
+.kpi-card.yellow::before { background: var(--yellow-dark); }
+.kpi-card.highlight { background: var(--green-dark); color: var(--white); border-color: var(--green-dark); }
+.kpi-card.highlight::before { background: var(--yellow); }
+.kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: 8px;
+}
+.kpi-card.highlight .kpi-label { color: rgba(255,255,255,.6); }
+.kpi-value {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--green-dark);
+  letter-spacing: -.5px;
+}
+.kpi-card.highlight .kpi-value { color: var(--yellow); }
+.kpi-sub {
+  font-size: 11px;
+  color: var(--gray-400);
+  margin-top: 6px;
+}
+.kpi-card.highlight .kpi-sub { color: rgba(255,255,255,.5); }
+.kpi-delta {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.delta-up { color: #2E7D32; }
+.delta-down { color: #C62828; }
+
+/* ── CHARTS GRID ── */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+.chart-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-200);
+}
+.chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chart-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  background: var(--green-pale);
+  color: var(--green);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* ── MAP ── */
+.map-wrap {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+}
+.map-header {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.map-title { font-size: 13px; font-weight: 600; }
+.map-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--gray-600);
+}
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+#map { height: 380px; }
+
+/* ── TABLES ── */
+.table-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+}
+.table-header {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.table-title { font-size: 13px; font-weight: 600; }
+table { width: 100%; border-collapse: collapse; }
+th {
+  background: var(--gray-50);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+  padding: 10px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-200);
+}
+td {
+  padding: 10px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--gray-100);
+  color: var(--gray-900);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--green-pale); }
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.tag-brand    { background: #E3F2FD; color: #1565C0; }
+.tag-mundial  { background: #FFF3E0; color: #E65100; }
+.tag-comp     { background: #FCE4EC; color: #AD1457; }
+.tag-fiesta   { background: #F3E5F5; color: #6A1B9A; }
+.tag-generic  { background: var(--green-pale); color: var(--green); }
+
+/* ── TIMELINE ── */
+.timeline-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--gray-200);
+}
+.timeline-track {
+  position: relative;
+  margin-top: 20px;
+  padding-bottom: 8px;
+}
+.timeline-bar {
+  height: 8px;
+  background: var(--gray-200);
+  border-radius: 4px;
+  position: relative;
+  margin-bottom: 28px;
+}
+.timeline-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: linear-gradient(90deg, var(--green-light), var(--yellow-dark));
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+.timeline-markers {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+}
+.t-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 10px;
+  color: var(--gray-600);
+  cursor: default;
+  position: relative;
+}
+.t-marker .dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--gray-400);
+  margin-bottom: 6px;
+  transition: transform .2s;
+}
+.t-marker.match .dot { background: var(--green); transform: scale(1.4); }
+.t-marker.today .dot { background: var(--yellow-dark); box-shadow: 0 0 0 3px rgba(249,168,37,.3); }
+.t-marker .label { text-align: center; max-width: 80px; font-weight: 500; }
+.t-marker.match .label { color: var(--green); font-weight: 700; }
+
+/* ── TWO COL ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+/* ── LOADING ── */
+.loading-overlay {
+  position: fixed; inset: 0;
+  background: var(--green-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity .5s;
+}
+.loading-logo {
+  background: var(--yellow);
+  color: var(--green-dark);
+  font-weight: 900;
+  font-size: 24px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  margin-bottom: 24px;
+  letter-spacing: 1px;
+}
+.loading-bar-wrap {
+  width: 220px;
+  height: 4px;
+  background: rgba(255,255,255,.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.loading-bar {
+  height: 100%;
+  background: var(--yellow);
+  border-radius: 2px;
+  animation: load 1.8s ease forwards;
+}
+@keyframes load { from{width:0} to{width:100%} }
+.loading-text {
+  color: rgba(255,255,255,.6);
+  font-size: 12px;
+  margin-top: 12px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .main { padding: 16px; }
+  .charts-grid, .two-col, .three-col { grid-template-columns: 1fr; }
+  .subnav { overflow-x: auto; }
+}
+
+/* ── SPARKLINE ── */
+.sparkline-wrap { display: flex; align-items: center; gap: 8px; }
+.spark { width: 60px; height: 24px; }
+
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: var(--gray-400);
+  font-size: 13px;
+}
+
+/* ─ GRUPO BADGES in KW table ─ */
+.bar-bg {
+  background: var(--gray-100);
+  border-radius: 3px;
+  height: 6px;
+  width: 100%;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--green-light);
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loader">
+  <div class="loading-logo">DOLLARCITY</div>
+  <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+  <div class="loading-text">Cargando datos de campaña…</div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="logo-badge">DOLLARCITY</div>
+    <span class="topbar-title">Campaign Intelligence · Guadalajara · Search 2026</span>
+  </div>
+  <div class="topbar-right">
+    <div class="last-update">
+      <div class="pulse"></div>
+      <span id="last-update-txt">Actualizando…</span>
+    </div>
+    <button class="refresh-btn" onclick="loadData()">↻ Actualizar</button>
+  </div>
+</div>
+
+<!-- SUB NAV -->
+<div class="subnav">
+  <a href="#resumen" class="active">Resumen</a>
+  <a href="#mapa">Mapa de Pauta</a>
+  <a href="#keywords">Keywords</a>
+  <a href="#anuncios">Anuncios</a>
+  <a href="#mundial">Mundial 2026</a>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- KPIs -->
+  <div id="resumen" class="section">
+    <div class="section-title">Métricas Clave · Últimos 30 días</div>
+    <div class="kpi-grid" id="kpi-grid">
+      <div class="kpi-card highlight">
+        <div class="kpi-label">Impresiones</div>
+        <div class="kpi-value" id="kpi-imp">—</div>
+        <div class="kpi-sub">Veces que apareció el anuncio</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Clics</div>
+        <div class="kpi-value" id="kpi-clics">—</div>
+        <div class="kpi-sub">Visitas generadas</div>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">CTR</div>
+        <div class="kpi-value" id="kpi-ctr">—</div>
+        <div class="kpi-sub">Tasa de clic promedio</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">CPC Promedio</div>
+        <div class="kpi-value" id="kpi-cpc">—</div>
+        <div class="kpi-sub">Costo por clic</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Conversiones</div>
+        <div class="kpi-value" id="kpi-conv">—</div>
+        <div class="kpi-sub">Visitas a tienda registradas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Campañas</div>
+        <div class="kpi-value">2</div>
+        <div class="kpi-sub">JUNIO26 Search #1 + #2</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-grid section">
+    <div class="chart-card">
+      <div class="chart-title">
+        Impresiones vs Clics por día
+        <span class="chart-badge">30 días</span>
+      </div>
+      <canvas id="chart-trend" height="120"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">
+        Clics por grupo de keyword
+        <span class="chart-badge">Distribución</span>
+      </div>
+      <canvas id="chart-groups" height="120"></canvas>
+    </div>
+  </div>
+
+  <!-- MAPA -->
+  <div id="mapa" class="section">
+    <div class="section-title">Mapa de Pauta · Cobertura Geográfica</div>
+    <div class="map-wrap">
+      <div class="map-header">
+        <div class="map-title">7 tiendas activas en Guadalajara y Zapopan</div>
+        <div class="map-legend">
+          <span><span class="legend-dot" style="background:#2E7D32"></span>Tienda activa</span>
+          <span><span class="legend-dot" style="background:rgba(46,125,50,.15);border:2px solid #2E7D32"></span>Radio de cobertura (5 km)</span>
+        </div>
+      </div>
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <!-- KEYWORDS -->
+  <div id="keywords" class="section">
+    <div class="section-title">Performance de Keywords</div>
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Keywords activas · ordenadas por impresiones</div>
+        <div style="display:flex;gap:8px;font-size:11px;color:var(--gray-400)">
+          <span id="kw-count">—</span> keywords activas
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="kw-table">
+          <thead>
+            <tr>
+              <th>Keyword</th>
+              <th>Grupo</th>
+              <th>Impresiones</th>
+              <th>Volumen</th>
+              <th>Clics</th>
+              <th>CTR</th>
+              <th>CPC</th>
+              <th>Posición</th>
+            </tr>
+          </thead>
+          <tbody id="kw-body">
+            <tr><td colspan="8" class="no-data">Cargando keywords…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANUNCIOS -->
+  <div id="anuncios" class="section">
+    <div class="section-title">Performance de Anuncios</div>
+    <div class="two-col">
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Titulares con más impresiones</div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Titular</th><th>Impr.</th><th>CTR</th><th>Campaña</th></tr>
+          </thead>
+          <tbody id="ads-body">
+            <tr><td colspan="4" class="no-data">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">CTR por titular</div>
+        <canvas id="chart-ads" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- MUNDIAL -->
+  <div id="mundial" class="section">
+    <div class="section-title">Contexto · Copa del Mundo FIFA 2026</div>
+    <div class="timeline-card">
+      <div class="chart-title">
+        Calendario de partidos en Guadalajara (Estadio Akron)
+        <span class="chart-badge">Ventana crítica</span>
+      </div>
+      <div class="timeline-track">
+        <div class="timeline-bar">
+          <div class="timeline-fill" id="timeline-fill" style="width:0%"></div>
+        </div>
+        <div class="timeline-markers" id="timeline-markers"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:16px" class="three-col">
+      <div class="kpi-card">
+        <div class="kpi-label">Keywords Mundial activas</div>
+        <div class="kpi-value" id="mundial-kw">—</div>
+        <div class="kpi-sub">Del grupo de halo</div>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">Vol. estimado "estadio akron"</div>
+        <div class="kpi-value">18K</div>
+        <div class="kpi-sub">Búsquedas/mes en MX (Ahrefs)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Tiendas cerca del estadio</div>
+        <div class="kpi-value">2</div>
+        <div class="kpi-sub">Ávila Camacho · Plaza Sania</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────
+var SHEET_ID = '1ZL0IUEhStlNegHtv2OxDlrqPpjArnoZ-SzfAHDtc8_0';
+var PUBLISHED_ID = '2PACX-1vQWjH3b_s_-m4PnSAJGoVsCO2TNn1qlwxzaHx00-AJTcGkG_kZawYoko7ftaf5tivpMD15EdbHgGdXt';
+var SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/' + PUBLISHED_ID + '/pub?output=csv&sheet=';
+
+var STORES = [
+  { name: 'Dollarcity 16 de Septiembre', lat: 20.666901, lng: -103.348105 },
+  { name: 'Dollarcity Logy Park',         lat: 20.659226, lng: -103.372453 },
+  { name: 'Dollarcity Centro Magno',       lat: 20.673860, lng: -103.380650 },
+  { name: 'Dollarcity Plan de San Luis',   lat: 20.697093, lng: -103.357539 },
+  { name: 'Dollarcity del Country',        lat: 20.697515, lng: -103.368059 },
+  { name: 'Dollarcity Plaza Sania',        lat: 20.675118, lng: -103.392797 },
+  { name: 'Dollarcity \u00c1vila Camacho', lat: 20.714213, lng: -103.377492 }
+];
+
+var MUNDIAL_DATES = [
+  { date: '2026-06-12', label: '12 Jun\nInaugural GDL', match: true },
+  { date: '2026-06-15', label: '15 Jun\nPartido GDL', match: true },
+  { date: '2026-06-19', label: '19 Jun\nPartido GDL', match: true },
+  { date: '2026-06-23', label: '23 Jun\nPartido GDL', match: true },
+  { date: '2026-06-27', label: '27 Jun\n\u00datima Fase GDL', match: true },
+  { date: '2026-07-10', label: '10 Jul\nCuartos', match: false },
+  { date: '2026-07-19', label: '19 Jul\nFinal', match: false }
+];
+
+var chartTrend = null, chartGroups = null, chartAds = null;
+
+// ─── FETCH SHEET ──────────────────────────────────────────────
+function fetchSheet(sheetName) {
+  var url = SHEET_URL + encodeURIComponent(sheetName);
+  return fetch(url)
+    .then(function(r){ return r.text(); })
+    .then(function(txt){
+      var lines = txt.trim().split('\n');
+      if (lines.length < 2) return [];
+      var headers = lines[0].split(',').map(function(h){ return h.replace(/^"|"$/g,'').trim(); });
+      return lines.slice(1).map(function(line){
+        // parse CSV respecting quoted commas
+        var vals = [];
+        var cur = ''; var inQ = false;
+        for (var i=0; i<line.length; i++){
+          var ch = line[i];
+          if (ch==='"'){ inQ=!inQ; }
+          else if (ch===',' && !inQ){ vals.push(cur); cur=''; }
+          else { cur+=ch; }
+        }
+        vals.push(cur);
+        var obj = {};
+        headers.forEach(function(h,i){ obj[h] = (vals[i]||'').replace(/^"|"$/g,'').trim(); });
+        return obj;
+      });
+    });
+}
+
+// ─── LOAD DATA ────────────────────────────────────────────────
+function loadData() {
+  Promise.all([
+    fetchSheet('RESUMEN'),
+    fetchSheet('KEYWORDS'),
+    fetchSheet('ANUNCIOS'),
+    fetchSheet('META')
+  ]).then(function(results){
+    var resumen  = results[0];
+    var keywords = results[1];
+    var anuncios = results[2];
+    var meta     = results[3];
+
+    renderKPIs(resumen);
+    renderTrend(resumen);
+    renderKeywords(keywords);
+    renderAnuncios(anuncios);
+    renderGroups(keywords);
+    renderMundialKW(keywords);
+    renderMeta(meta);
+  }).catch(function(e){
+    console.warn('Sheet no disponible, mostrando datos de demostración', e);
+    renderDemo();
+  });
+}
+
+// ─── KPIs ─────────────────────────────────────────────────────
+function renderKPIs(rows) {
+  if (!rows || !rows.length) return;
+  var totImp = 0, totClics = 0, totConv = 0, cpcSum = 0, n = rows.length;
+  rows.forEach(function(r){
+    totImp   += +(r['Impresiones']||0);
+    totClics += +(r['Clics']||0);
+    totConv  += +(r['Conversiones']||0);
+    cpcSum   += +(r['CPC']||0);
+  });
+  var ctr = totImp > 0 ? (totClics/totImp*100).toFixed(2) : '0.00';
+  var cpc = n > 0 ? (cpcSum/n).toFixed(2) : '0.00';
+
+  document.getElementById('kpi-imp').textContent   = fmt(totImp);
+  document.getElementById('kpi-clics').textContent = fmt(totClics);
+  document.getElementById('kpi-ctr').textContent   = ctr + '%';
+  document.getElementById('kpi-cpc').textContent   = '$' + cpc;
+  document.getElementById('kpi-conv').textContent  = fmt(totConv);
+}
+
+// ─── TREND CHART ──────────────────────────────────────────────
+function renderTrend(rows) {
+  if (!rows || !rows.length) return;
+  var byDate = {};
+  rows.forEach(function(r){
+    var d = r['Fecha'] || 'N/A';
+    if (!byDate[d]) byDate[d] = { imp:0, clics:0 };
+    byDate[d].imp   += +(r['Impresiones']||0);
+    byDate[d].clics += +(r['Clics']||0);
+  });
+  var dates  = Object.keys(byDate).sort();
+  var imps   = dates.map(function(d){ return byDate[d].imp; });
+  var clics  = dates.map(function(d){ return byDate[d].clics; });
+
+  var ctx = document.getElementById('chart-trend').getContext('2d');
+  if (chartTrend) chartTrend.destroy();
+  chartTrend = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [
+        { label: 'Impresiones', data: imps, borderColor: '#2E7D32', backgroundColor: 'rgba(46,125,50,.08)', tension: .4, fill: true, pointRadius: 3 },
+        { label: 'Clics',       data: clics, borderColor: '#FFD600', backgroundColor: 'rgba(255,214,0,.08)', tension: .4, fill: true, pointRadius: 3, yAxisID: 'y1' }
+      ]
+    },
+    options: {
+      responsive: true, interaction: { mode:'index', intersect:false },
+      plugins: { legend:{ labels:{ font:{ family:'Inter', size:11 } } } },
+      scales: {
+        x: { ticks:{ font:{family:'Inter',size:10}, maxRotation:45 }, grid:{color:'#F1F3F4'} },
+        y:  { ticks:{ font:{family:'Inter',size:10} }, grid:{color:'#F1F3F4'} },
+        y1: { position:'right', ticks:{ font:{family:'Inter',size:10} }, grid:{drawOnChartArea:false} }
+      }
+    }
+  });
+}
+
+// ─── KEYWORDS ─────────────────────────────────────────────────
+function renderKeywords(rows) {
+  if (!rows || !rows.length) {
+    document.getElementById('kw-body').innerHTML = '<tr><td colspan="8" class="no-data">Sin datos aún. El script de Google Ads comenzará a volcar data en la próxima ejecución.</td></tr>';
+    return;
+  }
+  var maxImp = Math.max.apply(null, rows.map(function(r){ return +(r['Impresiones']||0); }));
+  document.getElementById('kw-count').textContent = rows.length;
+  var html = rows.slice(0,30).map(function(r){
+    var imp = +(r['Impresiones']||0);
+    var pct = maxImp > 0 ? (imp/maxImp*100).toFixed(1) : 0;
+    return '<tr>' +
+      '<td style="font-weight:500">' + esc(r['Keyword']||'') + '</td>' +
+      '<td>' + tagGrupo(r['Grupo']||'') + '</td>' +
+      '<td>' + fmt(imp) + '<div class="bar-bg" style="margin-top:4px"><div class="bar-fill" style="width:'+pct+'%"></div></div></td>' +
+      '<td style="font-size:11px;color:var(--gray-400)">' + fmt(imp) + '</td>' +
+      '<td>' + fmt(+(r['Clics']||0)) + '</td>' +
+      '<td>' + (r['CTR']||'—') + '</td>' +
+      '<td>$' + parseFloat(r['CPC']||0).toFixed(2) + '</td>' +
+      '<td>' + (r['Posici\u00f3n']||'—') + '</td>' +
+    '</tr>';
+  }).join('');
+  document.getElementById('kw-body').innerHTML = html;
+}
+
+// ─── ANUNCIOS ─────────────────────────────────────────────────
+function renderAnuncios(rows) {
+  if (!rows || !rows.length) {
+    document.getElementById('ads-body').innerHTML = '<tr><td colspan="4" class="no-data">Sin datos aún.</td></tr>';
+    return;
+  }
+  var top = rows.slice(0,8);
+  document.getElementById('ads-body').innerHTML = top.map(function(r){
+    var camp = (r['Campa\u00f1a']||'').indexOf('#2') > -1 ? '#2' : '#1';
+    return '<tr>' +
+      '<td style="font-weight:500;max-width:180px">' + esc(r['Titular']||'') + '</td>' +
+      '<td>' + fmt(+(r['Impresiones']||0)) + '</td>' +
+      '<td>' + (r['CTR']||'—') + '</td>' +
+      '<td><span class="tag tag-brand">Search ' + camp + '</span></td>' +
+    '</tr>';
+  }).join('');
+
+  // Chart ads
+  var ctx = document.getElementById('chart-ads').getContext('2d');
+  if (chartAds) chartAds.destroy();
+  var labels = top.map(function(r){ var t = r['Titular']||''; return t.length>20 ? t.slice(0,20)+'…' : t; });
+  var ctrs   = top.map(function(r){ return parseFloat((r['CTR']||'0').replace('%',''))||0; });
+  chartAds = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{ label:'CTR (%)', data: ctrs, backgroundColor:'#2E7D32', borderRadius:6 }]
+    },
+    options: {
+      indexAxis:'y', responsive:true,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ ticks:{font:{family:'Inter',size:10}}, grid:{color:'#F1F3F4'} },
+        y:{ ticks:{font:{family:'Inter',size:10}} }
+      }
+    }
+  });
+}
+
+// ─── GROUPS CHART ─────────────────────────────────────────────
+function renderGroups(rows) {
+  if (!rows || !rows.length) return;
+  var groups = {};
+  rows.forEach(function(r){
+    var g = r['Grupo'] || 'Gen\u00e9rico';
+    groups[g] = (groups[g]||0) + +(r['Clics']||0);
+  });
+  var labels = Object.keys(groups);
+  var vals   = labels.map(function(g){ return groups[g]; });
+  var colors = ['#2E7D32','#FFD600','#1565C0','#6A1B9A','#E65100'];
+
+  var ctx = document.getElementById('chart-groups').getContext('2d');
+  if (chartGroups) chartGroups.destroy();
+  chartGroups = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels:labels, datasets:[{ data:vals, backgroundColor:colors, borderWidth:2, borderColor:'#fff' }] },
+    options:{
+      cutout:'65%',
+      plugins:{
+        legend:{ position:'bottom', labels:{ font:{family:'Inter',size:11}, padding:12 } }
+      }
+    }
+  });
+}
+
+// ─── MUNDIAL KW ───────────────────────────────────────────────
+function renderMundialKW(rows) {
+  if (!rows) return;
+  var count = rows.filter(function(r){ return r['Grupo'] === 'Mundial'; }).length;
+  document.getElementById('mundial-kw').textContent = count || '—';
+}
+
+// ─── META ─────────────────────────────────────────────────────
+function renderMeta(rows) {
+  if (!rows || !rows.length) return;
+  var metaObj = {};
+  rows.forEach(function(r){ if(r['ultima_actualizacion']) metaObj = r; });
+  var ts = metaObj['ultima_actualizacion'] || metaObj['B'] || '';
+  if (ts) document.getElementById('last-update-txt').textContent = 'Actualizado: ' + ts;
+}
+
+// ─── MAP ──────────────────────────────────────────────────────
+function initMap() {
+  var map = L.map('map').setView([20.682, -103.370], 12);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom:18
+  }).addTo(map);
+
+  var icon = L.divIcon({
+    className: '',
+    html: '<div style="background:#1B5E20;color:#FFD600;font-size:11px;font-weight:800;padding:5px 8px;border-radius:8px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3);font-family:Inter,sans-serif;border:2px solid #FFD600">DC</div>',
+    iconAnchor: [16,16]
+  });
+
+  STORES.forEach(function(s){
+    L.circle([s.lat, s.lng], {
+      radius: 3500,
+      color: '#2E7D32',
+      fillColor: '#2E7D32',
+      fillOpacity: 0.07,
+      weight: 1.5,
+      dashArray: '4 4'
+    }).addTo(map);
+
+    L.marker([s.lat, s.lng], { icon: icon })
+      .addTo(map)
+      .bindPopup(
+        '<div style="font-family:Inter,sans-serif;min-width:180px">' +
+        '<div style="font-weight:700;font-size:13px;color:#1B5E20;margin-bottom:6px">' + s.name + '</div>' +
+        '<div style="font-size:11px;color:#666;margin-bottom:8px">Pauta activa · Abierto hasta las 9pm</div>' +
+        '<a href="https://www.google.com/maps/dir/?api=1&destination=' + s.lat + ',' + s.lng +
+        '" target="_blank" style="background:#1B5E20;color:#FFD600;font-size:11px;font-weight:700;padding:5px 10px;border-radius:5px;text-decoration:none">Ver en Maps →</a>' +
+        '</div>',
+        { maxWidth: 220 }
+      );
+  });
+}
+
+// ─── TIMELINE ─────────────────────────────────────────────────
+function renderTimeline() {
+  var today = new Date();
+  var start = new Date('2026-06-12');
+  var end   = new Date('2026-07-19');
+  var total = end - start;
+  var elapsed = Math.min(Math.max(today - start, 0), total);
+  var pct = (elapsed / total * 100).toFixed(1);
+  document.getElementById('timeline-fill').style.width = pct + '%';
+
+  var todayStr = today.toISOString().slice(0,10);
+  var html = MUNDIAL_DATES.map(function(m){
+    var isToday = m.date === todayStr;
+    var cls = m.match ? 'match' : '';
+    if (isToday) cls += ' today';
+    return '<div class="t-marker ' + cls + '">' +
+      '<div class="dot"></div>' +
+      '<div class="label">' + m.label.replace('\n','<br>') + '</div>' +
+    '</div>';
+  }).join('');
+  document.getElementById('timeline-markers').innerHTML = html;
+}
+
+// ─── DEMO DATA ────────────────────────────────────────────────
+function renderDemo() {
+  document.getElementById('kpi-imp').textContent   = '84,320';
+  document.getElementById('kpi-clics').textContent = '3,210';
+  document.getElementById('kpi-ctr').textContent   = '3.81%';
+  document.getElementById('kpi-cpc').textContent   = '$4.20';
+  document.getElementById('kpi-conv').textContent  = '218';
+  document.getElementById('kw-count').textContent  = '62';
+  document.getElementById('mundial-kw').textContent = '14';
+  document.getElementById('last-update-txt').textContent = 'Datos demo · conecta el script de Google Ads';
+
+  // Demo trend
+  var days = [], imps = [], clics = [];
+  for (var i=29; i>=0; i--) {
+    var d = new Date(); d.setDate(d.getDate()-i);
+    days.push(d.toISOString().slice(5,10));
+    imps.push(Math.round(2400 + Math.random()*1200));
+    clics.push(Math.round(90 + Math.random()*60));
+  }
+  var ctx = document.getElementById('chart-trend').getContext('2d');
+  if (chartTrend) chartTrend.destroy();
+  chartTrend = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels:days,
+      datasets:[
+        { label:'Impresiones', data:imps, borderColor:'#2E7D32', backgroundColor:'rgba(46,125,50,.08)', tension:.4, fill:true, pointRadius:2 },
+        { label:'Clics', data:clics, borderColor:'#FFD600', backgroundColor:'rgba(255,214,0,.08)', tension:.4, fill:true, pointRadius:2, yAxisID:'y1' }
+      ]
+    },
+    options:{
+      responsive:true, interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{font:{family:'Inter',size:11}}}},
+      scales:{
+        x:{ticks:{font:{family:'Inter',size:10},maxRotation:45},grid:{color:'#F1F3F4'}},
+        y:{ticks:{font:{family:'Inter',size:10}},grid:{color:'#F1F3F4'}},
+        y1:{position:'right',ticks:{font:{family:'Inter',size:10}},grid:{drawOnChartArea:false}}
+      }
+    }
+  });
+
+  // Demo groups
+  var ctxG = document.getElementById('chart-groups').getContext('2d');
+  if (chartGroups) chartGroups.destroy();
+  chartGroups = new Chart(ctxG, {
+    type:'doughnut',
+    data:{
+      labels:['Brand','Mundial','Reuni\u00f3n/Fiesta','Gen\u00e9rico','Competidores'],
+      datasets:[{ data:[38,22,18,14,8], backgroundColor:['#2E7D32','#FFD600','#6A1B9A','#43A047','#E65100'], borderWidth:2, borderColor:'#fff' }]
+    },
+    options:{ cutout:'65%', plugins:{ legend:{ position:'bottom', labels:{ font:{family:'Inter',size:11}, padding:12 } } } }
+  });
+
+  // Demo keywords
+  var demoKW = [
+    {k:'dollarcity guadalajara',g:'Brand',imp:14200,clics:820,ctr:'5.77%',cpc:'$2.10',pos:'1.2'},
+    {k:'dollarcity cerca de ti',g:'Brand',imp:9800,clics:540,ctr:'5.51%',cpc:'$1.90',pos:'1.4'},
+    {k:'mundial 2026 guadalajara',g:'Mundial',imp:8400,clics:310,ctr:'3.69%',cpc:'$3.80',pos:'2.1'},
+    {k:'estadio akron',g:'Mundial',imp:7200,clics:290,ctr:'4.03%',cpc:'$4.20',pos:'2.3'},
+    {k:'tiendas 3b guadalajara',g:'Competidores',imp:5100,clics:180,ctr:'3.53%',cpc:'$2.90',pos:'2.8'},
+    {k:'decoraci\u00f3n fiestas guadalajara',g:'Reuni\u00f3n/Fiesta',imp:4200,clics:195,ctr:'4.64%',cpc:'$3.10',pos:'1.9'},
+    {k:'artículos de fiesta desde $1',g:'Reuni\u00f3n/Fiesta',imp:3900,clics:188,ctr:'4.82%',cpc:'$2.70',pos:'1.7'},
+    {k:'dollarcity 7 tiendas',g:'Brand',imp:3400,clics:201,ctr:'5.91%',cpc:'$1.50',pos:'1.1'},
+    {k:'partidos mundial guadalajara',g:'Mundial',imp:3100,clics:110,ctr:'3.55%',cpc:'$4.50',pos:'2.6'},
+    {k:'tiendas baratas guadalajara',g:'Gen\u00e9rico',imp:2800,clics:98,ctr:'3.50%',cpc:'$3.20',pos:'3.1'}
+  ];
+  var maxI = 14200;
+  document.getElementById('kw-body').innerHTML = demoKW.map(function(r){
+    var pct = (r.imp/maxI*100).toFixed(1);
+    return '<tr>' +
+      '<td style="font-weight:500">' + r.k + '</td>' +
+      '<td>' + tagGrupo(r.g) + '</td>' +
+      '<td>' + fmt(r.imp) + '<div class="bar-bg" style="margin-top:4px"><div class="bar-fill" style="width:'+pct+'%"></div></div></td>' +
+      '<td style="font-size:11px;color:var(--gray-400)">' + fmt(r.imp) + '</td>' +
+      '<td>' + fmt(r.clics) + '</td>' +
+      '<td>' + r.ctr + '</td>' +
+      '<td>' + r.cpc + '</td>' +
+      '<td>' + r.pos + '</td>' +
+    '</tr>';
+  }).join('');
+
+  // Demo anuncios
+  var demoAds = [
+    {t:'Dollarcity Guadalajara',imp:18200,ctr:'5.8%',c:'#1'},
+    {t:'7 tiendas en Guadalajara',imp:12100,ctr:'4.9%',c:'#1'},
+    {t:'Decora tu reuni\u00f3n del Mundial',imp:9800,ctr:'4.3%',c:'#2'},
+    {t:'Todo desde $1 en Dollarcity',imp:8400,ctr:'4.1%',c:'#1'},
+    {t:'Abierto hasta las 9pm',imp:7200,ctr:'3.9%',c:'#2'},
+    {t:'Cerca del Estadio Akron',imp:6100,ctr:'3.7%',c:'#2'},
+    {t:'Kit fiesta f\u00fatbol desde $1',imp:5300,ctr:'3.5%',c:'#1'},
+    {t:'Dollarcity \u00c1vila Camacho',imp:4800,ctr:'3.2%',c:'#2'}
+  ];
+  document.getElementById('ads-body').innerHTML = demoAds.map(function(r){
+    return '<tr>' +
+      '<td style="font-weight:500">' + r.t + '</td>' +
+      '<td>' + fmt(r.imp) + '</td>' +
+      '<td>' + r.ctr + '</td>' +
+      '<td><span class="tag tag-brand">Search ' + r.c + '</span></td>' +
+    '</tr>';
+  }).join('');
+
+  var ctxA = document.getElementById('chart-ads').getContext('2d');
+  if (chartAds) chartAds.destroy();
+  chartAds = new Chart(ctxA, {
+    type:'bar',
+    data:{
+      labels: demoAds.map(function(r){ return r.t.length>22?r.t.slice(0,22)+'…':r.t; }),
+      datasets:[{ label:'CTR (%)', data: demoAds.map(function(r){ return parseFloat(r.ctr); }), backgroundColor:'#2E7D32', borderRadius:6 }]
+    },
+    options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{x:{ticks:{font:{family:'Inter',size:10}},grid:{color:'#F1F3F4'}},y:{ticks:{font:{family:'Inter',size:10}}}}}
+  });
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────
+function fmt(n) {
+  return (+n||0).toLocaleString('es-MX');
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function tagGrupo(g) {
+  var map = {
+    'Brand':'tag-brand','Mundial':'tag-mundial',
+    'Competidores':'tag-comp','Reuni\u00f3n/Fiesta':'tag-fiesta','Gen\u00e9rico':'tag-generic'
+  };
+  return '<span class="tag ' + (map[g]||'tag-generic') + '">' + esc(g) + '</span>';
+}
+
+// ─── NAV ACTIVE ───────────────────────────────────────────────
+function initNav() {
+  var sections = ['resumen','mapa','keywords','anuncios','mundial'];
+  var links = document.querySelectorAll('.subnav a');
+  window.addEventListener('scroll', function(){
+    var current = '';
+    sections.forEach(function(id){
+      var el = document.getElementById(id);
+      if (el && window.scrollY >= el.offsetTop - 120) current = id;
+    });
+    links.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('href') === '#'+current);
+    });
+  });
+}
+
+// ─── INIT ─────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', function(){
+  initNav();
+  initMap();
+  renderTimeline();
+  loadData();
+
+  setTimeout(function(){
+    var loader = document.getElementById('loader');
+    loader.style.opacity = '0';
+    setTimeout(function(){ loader.style.display = 'none'; }, 500);
+  }, 2000);
+
+  // Auto-refresh cada 5 min
+  setInterval(loadData, 5 * 60 * 1000);
+});
+</script>
+</body>
+</html>
