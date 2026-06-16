@@ -477,7 +477,7 @@ tr:hover td { background: var(--green-pale); }
   <div class="topbar-right">
     <div class="last-update">
       <div class="pulse"></div>
-      <span id="last-update-txt">Actualizando…</span>
+      <span id="last-update-txt">Esperando primeros datos…</span>
     </div>
     <button class="refresh-btn" onclick="loadData()">↻ Actualizar</button>
   </div>
@@ -762,8 +762,8 @@ function loadData() {
     renderGeo(geo);
     renderURLs(urls);
   }).catch(function(e){
-    console.warn('Sheet no disponible, mostrando datos de demostración', e);
-    renderDemo();
+    console.warn('Error cargando Sheet:', e);
+    document.getElementById('last-update-txt').textContent = 'Esperando primeros datos de campaña…';
   });
 }
 
@@ -999,7 +999,7 @@ function renderDemo() {
   document.getElementById('kpi-conv').textContent  = '218';
   document.getElementById('kw-count').textContent  = '62';
   document.getElementById('mundial-kw').textContent = '14';
-  document.getElementById('last-update-txt').textContent = 'Datos demo · conecta el script de Google Ads';
+  document.getElementById('last-update-txt').textContent = 'Esperando primeros datos de campaña…';
 
   // Demo trend
   var days = [], imps = [], clics = [];
