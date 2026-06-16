@@ -661,8 +661,7 @@ tr:hover td { background: var(--green-pale); }
 <script>
 // ─── CONFIG ───────────────────────────────────────────────────
 var SHEET_ID = '1ZL0IUEhStlNegHtv2OxDlrqPpjArnoZ-SzfAHDtc8_0';
-var PUBLISHED_ID = '2PACX-1vQWjH3b_s_-m4PnSAJGoVsCO2TNn1qlwxzaHx00-AJTcGkG_kZawYoko7ftaf5tivpMD15EdbHgGdXt';
-var SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/' + PUBLISHED_ID + '/pub?output=csv&sheet=';
+var SHEET_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&sheet=';
 
 var STORES = [
   { name: 'Dollarcity 16 de Septiembre', lat: 20.666901, lng: -103.348105 },
@@ -692,22 +691,21 @@ function fetchSheet(sheetName) {
   return fetch(url)
     .then(function(r){ return r.text(); })
     .then(function(txt){
-      var lines = txt.trim().split('\n');
-      if (lines.length < 2) return [];
-      var headers = lines[0].split(',').map(function(h){ return h.replace(/^"|"$/g,'').trim(); });
-      return lines.slice(1).map(function(line){
-        // parse CSV respecting quoted commas
-        var vals = [];
-        var cur = ''; var inQ = false;
-        for (var i=0; i<line.length; i++){
-          var ch = line[i];
-          if (ch==='"'){ inQ=!inQ; }
-          else if (ch===',' && !inQ){ vals.push(cur); cur=''; }
-          else { cur+=ch; }
-        }
-        vals.push(cur);
+      var json = txt.replace(/^\/\*[^*]*\*\/\s*/, '').replace(/^[^(]+\(/, '').replace(/\);?\s*$/, '');
+      var data = JSON.parse(json);
+      if (!data.table || !data.table.rows) return [];
+      var cols = data.table.cols.map(function(c){ return c.label; });
+      return data.table.rows.map(function(row){
         var obj = {};
-        headers.forEach(function(h,i){ obj[h] = (vals[i]||'').replace(/^"|"$/g,'').trim(); });
+        row.c.forEach(function(cell, i){
+          if (!cell) { obj[cols[i]] = null; return; }
+          // fechas vienen como "Date(2026,5,16)" - convertir a string
+          if (typeof cell.v === 'string' && cell.v.indexOf('Date(') === 0) {
+            obj[cols[i]] = cell.f || cell.v;
+          } else {
+            obj[cols[i]] = cell.f !== undefined && cell.f !== null ? cell.f : cell.v;
+          }
+        });
         return obj;
       });
     });
