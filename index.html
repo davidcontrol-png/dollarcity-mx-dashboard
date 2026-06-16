@@ -490,6 +490,7 @@ tr:hover td { background: var(--green-pale); }
   <a href="#keywords">Keywords</a>
   <a href="#anuncios">Anuncios</a>
   <a href="#mundial">Mundial 2026</a>
+  <a href="#geo">Geografía</a>
 </div>
 
 <!-- MAIN -->
@@ -656,6 +657,41 @@ tr:hover td { background: var(--green-pale); }
     </div>
   </div>
 
+
+  <!-- GEO + URLS -->
+  <div id="geo" class="section">
+    <div class="section-title">Geografía de Clics · De dónde vienen</div>
+    <div class="two-col">
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Top ciudades por clics</div>
+          <span id="geo-total" style="font-size:11px;color:var(--gray-400)"></span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Ciudad</th><th>Estado</th><th>Clics</th><th>Impr.</th><th>CTR</th></tr>
+          </thead>
+          <tbody id="geo-body">
+            <tr><td colspan="6" class="no-data">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">URL de tienda con más clics</div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Tienda</th><th>Clics</th><th>CTR</th><th>CPC</th></tr>
+          </thead>
+          <tbody id="url-body">
+            <tr><td colspan="5" class="no-data">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /main -->
 
 <script>
@@ -717,12 +753,16 @@ function loadData() {
     fetchSheet('RESUMEN'),
     fetchSheet('KEYWORDS'),
     fetchSheet('ANUNCIOS'),
-    fetchSheet('META')
+    fetchSheet('META'),
+    fetchSheet('GEO'),
+    fetchSheet('URLS')
   ]).then(function(results){
     var resumen  = results[0];
     var keywords = results[1];
     var anuncios = results[2];
     var meta     = results[3];
+    var geo      = results[4];
+    var urls     = results[5];
 
     renderKPIs(resumen);
     renderTrend(resumen);
@@ -731,6 +771,8 @@ function loadData() {
     renderGroups(keywords);
     renderMundialKW(keywords);
     renderMeta(meta);
+    renderGeo(geo);
+    renderURLs(urls);
   }).catch(function(e){
     console.warn('Sheet no disponible, mostrando datos de demostración', e);
     renderDemo();
@@ -1102,6 +1144,54 @@ function initNav() {
       a.classList.toggle('active', a.getAttribute('href') === '#'+current);
     });
   });
+}
+
+
+// ─── GEO ──────────────────────────────────────────────────────
+function renderGeo(rows) {
+  if (!rows || !rows.length) {
+    document.getElementById('geo-body').innerHTML = '<tr><td colspan="6" class="no-data">Sin datos geográficos aún — aparecerán cuando haya clics.</td></tr>';
+    return;
+  }
+  var top = rows.slice(0,15);
+  var totalClics = rows.reduce(function(s,r){ return s + (+(r['Clics']||0)); }, 0);
+  document.getElementById('geo-total').textContent = fmt(totalClics) + ' clics totales';
+  document.getElementById('geo-body').innerHTML = top.map(function(r, i){
+    var clics = +(r['Clics']||0);
+    var imp   = +(r['Impresiones']||0);
+    var pct   = totalClics > 0 ? (clics/totalClics*100).toFixed(1) : 0;
+    return '<tr>' +
+      '<td style="color:var(--gray-400);font-size:11px">' + (i+1) + '</td>' +
+      '<td style="font-weight:500">' + esc(r['Ciudad']||'—') + '</td>' +
+      '<td style="font-size:12px;color:var(--gray-600)">' + esc(r['Estado']||'—') + '</td>' +
+      '<td><strong>' + fmt(clics) + '</strong><span style="font-size:10px;color:var(--gray-400);margin-left:4px">(' + pct + '%)</span>' +
+      '<div class="bar-bg" style="margin-top:3px"><div class="bar-fill" style="width:' + (totalClics>0?clics/rows[0]['Clics']*100:0).toFixed(1) + '%"></div></div></td>' +
+      '<td style="font-size:12px">' + fmt(imp) + '</td>' +
+      '<td>' + (r['CTR']||'—') + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+// ─── URLs ─────────────────────────────────────────────────────
+function renderURLs(rows) {
+  if (!rows || !rows.length) {
+    document.getElementById('url-body').innerHTML = '<tr><td colspan="5" class="no-data">Sin datos de URL aún — aparecerán cuando haya clics a tiendas.</td></tr>';
+    return;
+  }
+  var maxC = rows[0] ? +(rows[0]['Clics']||0) : 1;
+  document.getElementById('url-body').innerHTML = rows.slice(0,7).map(function(r, i){
+    var clics = +(r['Clics']||0);
+    var pct   = maxC > 0 ? (clics/maxC*100).toFixed(1) : 0;
+    var tienda = r['Tienda'] || r['URL Destino'] || '—';
+    return '<tr>' +
+      '<td style="color:var(--gray-400);font-size:11px">' + (i+1) + '</td>' +
+      '<td style="font-weight:500;font-size:12px">' + esc(tienda) + '</td>' +
+      '<td><strong>' + fmt(clics) + '</strong>' +
+      '<div class="bar-bg" style="margin-top:3px"><div class="bar-fill" style="width:' + pct + '%"></div></div></td>' +
+      '<td>' + (r['CTR']||'—') + '</td>' +
+      '<td>$' + parseFloat(r['CPC']||0).toFixed(2) + '</td>' +
+    '</tr>';
+  }).join('');
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
