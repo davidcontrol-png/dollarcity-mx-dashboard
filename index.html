@@ -525,11 +525,7 @@ tr:hover td { background: var(--green-pale); }
         <div class="kpi-value" id="kpi-conv">—</div>
         <div class="kpi-sub">Visitas a tienda registradas</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Campañas</div>
-        <div class="kpi-value">2</div>
-        <div class="kpi-sub">JUNIO26 Search #1 + #2</div>
-      </div>
+
     </div>
   </div>
 
@@ -666,8 +662,13 @@ tr:hover td { background: var(--green-pale); }
         <div style="font-size:13px;font-weight:600;">Reporte geográfico · Dollarcity MX · Google Ads</div>
         <a href="https://datastudio.google.com/reporting/7ee879b9-22d7-487a-90e8-477811e3f3c4" target="_blank" style="font-size:11px;color:var(--green);font-weight:600;text-decoration:none;">Abrir en Looker Studio ↗</a>
       </div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--gray-200);padding:0 22px;">
+        <button onclick="switchTab('tabla')" id="tab-tabla" style="font-family:Inter,sans-serif;font-size:12px;font-weight:600;padding:12px 18px;border:none;background:none;cursor:pointer;color:var(--green);border-bottom:2px solid var(--green);">📊 Tabla por ciudad</button>
+        <button onclick="switchTab('mapa')" id="tab-mapa" style="font-family:Inter,sans-serif;font-size:12px;font-weight:600;padding:12px 18px;border:none;background:none;cursor:pointer;color:var(--gray-400);border-bottom:2px solid transparent;">🗺️ Mapa de calor</button>
+      </div>
       <div style="position:relative;width:100%;overflow:hidden;border-radius:0 0 var(--radius) var(--radius);">
-        <iframe 
+        <iframe id="looker-frame"
           width="100%" 
           height="900" 
           src="https://datastudio.google.com/embed/reporting/7ee879b9-22d7-487a-90e8-477811e3f3c4/page/vAU1F" 
@@ -1180,6 +1181,27 @@ function renderURLs(rows) {
       '<td>$' + parseFloat(r['CPC']||0).toFixed(2) + '</td>' +
     '</tr>';
   }).join('');
+}
+
+// ─── LOOKER TABS ──────────────────────────────────────────────
+function switchTab(tab) {
+  var frame = document.getElementById('looker-frame');
+  var tabTabla = document.getElementById('tab-tabla');
+  var tabMapa  = document.getElementById('tab-mapa');
+  var base = 'https://datastudio.google.com/embed/reporting/7ee879b9-22d7-487a-90e8-477811e3f3c4/page/';
+  if (tab === 'tabla') {
+    frame.src = base + 'vAU1F';
+    tabTabla.style.color = 'var(--green)';
+    tabTabla.style.borderBottom = '2px solid var(--green)';
+    tabMapa.style.color = 'var(--gray-400)';
+    tabMapa.style.borderBottom = '2px solid transparent';
+  } else {
+    frame.src = base + 'p_bjbi5in24d';
+    tabMapa.style.color = 'var(--green)';
+    tabMapa.style.borderBottom = '2px solid var(--green)';
+    tabTabla.style.color = 'var(--gray-400)';
+    tabTabla.style.borderBottom = '2px solid transparent';
+  }
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
